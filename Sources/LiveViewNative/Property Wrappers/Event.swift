@@ -96,11 +96,31 @@ public struct Event: DynamicProperty, Decodable {
     @_documentation(visibility: public)
     private let params: Any?
     
-    private var debounceAttribute: Double? {
-        try? element.attributeValue(Double.self, for: "phx-debounce")
+    var debounceAttribute: Debounce? {
+        try? element.attributeValue(Debounce.self, for: "phx-debounce")
     }
     private var throttleAttribute: Double? {
         try? element.attributeValue(Double.self, for: "phx-throttle")
+    }
+    
+    enum Debounce: AttributeDecodable, Equatable {
+        /// Only send when the input loses focus.
+        /// Handled by `@FormState` and `@ChangeTracked`, with the individual form controls indicating when they lose focus.
+        case blur
+        case milliseconds(Double)
+        
+        init(from attribute: Attribute?, on element: ElementNode) throws {
+            if attribute?.value == "blur" {
+                self = .blur
+            } else {
+                self = .milliseconds(try Double(from: attribute, on: element))
+            }
+        }
+        
+        var milliseconds: Double? {
+            guard case let .milliseconds(milliseconds) = self else { return nil }
+            return milliseconds
+        }
     }
     
     final class Handler: ObservableObject {
@@ -283,7 +303,7 @@ public struct Event: DynamicProperty, Decodable {
     }
     
     public func update() {
-        handler.update(coordinator: coordinatorEnvironment, debounce: debounce ?? debounceAttribute, throttle: throttle ?? throttleAttribute)
+        handler.update(coordinator: coordinatorEnvironment, debounce: debounce ?? debounceAttribute?.milliseconds, throttle: throttle ?? throttleAttribute)
     }
     
     /// An action that you invoke to send an event to the server.

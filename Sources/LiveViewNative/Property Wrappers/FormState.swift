@@ -213,6 +213,10 @@ public struct FormState<Value: FormValue> {
         }
     }
     
+    /// Call this function when the form control loses focus.
+    public func handleBlur() async throws {
+        try await self._boundValue.pushChangeEvent()
+    }
 }
 
 extension FormState: DynamicProperty {
